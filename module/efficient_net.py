@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn as nn
-from torchvision.models import EfficientNet_V2_L_Weights, efficientnet_v2_l
+from torchvision.models import EfficientNet_V2_S_Weights, efficientnet_v2_s
 
 
 class EfficientNetEncoder(nn.Module):
@@ -12,7 +12,7 @@ class EfficientNetEncoder(nn.Module):
         """Initialize EfficientNet encoder."""
         super(EfficientNetEncoder, self).__init__()
         self.encoder = nn.Sequential(
-            efficientnet_v2_l(EfficientNet_V2_L_Weights.IMAGENET1K_V1).features,
+            efficientnet_v2_s(EfficientNet_V2_S_Weights.IMAGENET1K_V1).features,
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(1),
         )

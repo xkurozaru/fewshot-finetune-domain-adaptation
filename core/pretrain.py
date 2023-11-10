@@ -2,10 +2,9 @@ import os
 
 import torch
 import torch.nn as nn
-from tqdm import tqdm
-
 from common import Dataset, ImageTransform, param
 from module import EfficientNetClassifier, EfficientNetEncoder
+from tqdm import tqdm
 
 
 def pretrain():
@@ -17,7 +16,7 @@ def pretrain():
         transform=ImageTransform(),
     )
     dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True
+        dataset, batch_size=param.pretrain_batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True
     )
 
     # model
@@ -28,7 +27,7 @@ def pretrain():
 
     # learning settings
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.RAdam(
         [
             {"params": encoder.parameters()},
             {"params": classifier.parameters()},
@@ -42,7 +41,7 @@ def pretrain():
     print("Start pretraining...")
     for epoch in range(param.pretrain_num_epochs):
         epoch_loss = 0.0
-        for images, labels, _ in tqdm(dataloader):
+        for images, labels in tqdm(dataloader):
             images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
 
             # forward

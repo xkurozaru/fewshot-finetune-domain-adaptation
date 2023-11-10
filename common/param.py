@@ -2,6 +2,7 @@
 src_path = "/data2/eto/Dataset/eggplant_fewclass/7class_leak/train/"
 tgt_path = "/data2/eto/Dataset/eggplant_fewclass/7class_leak/fewshot/"
 test_path = "/data2/eto/Dataset/eggplant_fewclass/7class_leak/test/"
+pretrain_batch_size = 128
 batch_size = 14
 
 # learning parameters
