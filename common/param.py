@@ -6,10 +6,10 @@ pretrain_batch_size = 128
 batch_size = 14
 
 # learning parameters
-seed = 42
+seed = 48
 lr = 1e-3
 pretrain_num_epochs = 100
-finetune_num_epochs = 10000
+finetune_num_epochs = 1000
 
 # model weight
 pretrain_encoder_weight = "./weight/encoder.pth"
@@ -24,4 +24,4 @@ cosine_tune_encoder_weight = "./weight/cosine_tune_encoder.pth"
 cosine_tune_classifier_weight = "./weight/cosine_tune_classifier.pth"
 
 # GPU settings
-gpu_ids = "6,7"
+gpu_ids = "4,5"

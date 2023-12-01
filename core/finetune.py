@@ -2,9 +2,10 @@ import os
 
 import torch
 import torch.nn as nn
+from tqdm import tqdm
+
 from common import Dataset, ImageTransform, param, remove_glob
 from module import EfficientNetClassifier, EfficientNetEncoder
-from tqdm import tqdm
 
 
 def finetune():
@@ -15,9 +16,7 @@ def finetune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True
-    )
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
 
     # model
     encoder = EfficientNetEncoder().to(device)
@@ -29,7 +28,7 @@ def finetune():
 
     # learning settings
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.RAdam(
+    optimizer = torch.optim.Adam(
         [
             {"params": encoder.parameters()},
             {"params": classifier.parameters()},
@@ -41,9 +40,9 @@ def finetune():
     encoder.train()
     classifier.train()
     print("Start finetuning...")
+    min_loss = 100.0
     for epoch in range(param.finetune_num_epochs):
         epoch_loss = 0.0
-        min_loss = 100.0
         for images, labels in tqdm(dataloader):
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
@@ -68,9 +67,13 @@ def finetune():
         # save model
         if epoch_loss < min_loss:
             min_loss = epoch_loss
-            remove_glob(f"{param.finetune_encoder_weight}_*")
-            remove_glob(f"{param.finetune_classifier_weight}_*")
-            torch.save(encoder.module.state_dict(), f"{param.finetune_encoder_weight}_{epoch}")
-            torch.save(classifier.module.state_dict(), f"{param.finetune_classifier_weight}_{epoch}")
+            remove_glob(f"{param.finetune_encoder_weight}_best_*")
+            remove_glob(f"{param.finetune_classifier_weight}_best_*")
+            torch.save(encoder.module.state_dict(), f"{param.finetune_encoder_weight}_best_{epoch+1}")
+            torch.save(classifier.module.state_dict(), f"{param.finetune_classifier_weight}_best_{epoch+1}")
+
+        if (epoch + 1) % (param.finetune_num_epochs // 10) == 0:
+            torch.save(encoder.module.state_dict(), f"{param.finetune_encoder_weight}_epoch_{epoch+1}")
+            torch.save(classifier.module.state_dict(), f"{param.finetune_classifier_weight}_epoch_{epoch+1}")
 
     print("Finished finetuning!")

@@ -2,9 +2,10 @@ import os
 
 import torch
 import torch.nn as nn
+from tqdm import tqdm
+
 from common import Dataset, DivideDataset, ImageTransform, param, remove_glob
 from module import CosineTripletLoss, EfficientNetClassifier, EfficientNetEncoder
-from tqdm import tqdm
 
 
 def cosine_tune():
@@ -15,9 +16,7 @@ def cosine_tune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    tgt_dataloader = torch.utils.data.DataLoader(
-        tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True
-    )
+    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
     src_dataset = DivideDataset(
         root=param.src_path,
         transform=ImageTransform(),
@@ -35,7 +34,7 @@ def cosine_tune():
     # learning settings
     classify_criterion = nn.CrossEntropyLoss()
     dist_criterion = CosineTripletLoss()
-    optimizer = torch.optim.RAdam(
+    optimizer = torch.optim.Adam(
         [
             {"params": encoder.parameters()},
             {"params": classifier.parameters()},
@@ -47,10 +46,10 @@ def cosine_tune():
     encoder.train()
     classifier.train()
     print("Start cosine finetuning...")
+    min_loss = 100.0
     for epoch in range(param.finetune_num_epochs):
         epoch_classify_loss = 0.0
         epoch_dist_loss = 0.0
-        min_loss = 100.0
         for tgt_images, tgt_labels in tqdm(tgt_dataloader):
             tgt_images, tgt_labels = tgt_images.to(device, non_blocking=True), tgt_labels.to(device, non_blocking=True)
 
@@ -83,16 +82,18 @@ def cosine_tune():
 
         epoch_classify_loss /= len(tgt_dataloader)
         epoch_dist_loss /= len(tgt_dataloader)
-        print(
-            f"Epoch: {epoch + 1}/{param.finetune_num_epochs} | Classify Loss: {epoch_classify_loss:.4f} | Dist Loss: {epoch_dist_loss:.4f}"
-        )
+        print(f"Epoch: {epoch + 1}/{param.finetune_num_epochs} | Classify Loss: {epoch_classify_loss:.4f} | Dist Loss: {epoch_dist_loss:.4f}")
 
         # save model
         if epoch_classify_loss + epoch_dist_loss < min_loss:
             min_loss = epoch_classify_loss + epoch_dist_loss
-            remove_glob(f"{param.cosine_tune_encoder_weight}_*")
-            remove_glob(f"{param.cosine_tune_classifier_weight}_*")
-            torch.save(encoder.module.state_dict(), f"{param.cosine_tune_encoder_weight}_{epoch}")
-            torch.save(classifier.module.state_dict(), f"{param.cosine_tune_classifier_weight}_{epoch}")
+            remove_glob(f"{param.cosine_tune_encoder_weight}_best_*")
+            remove_glob(f"{param.cosine_tune_classifier_weight}_best_*")
+            torch.save(encoder.module.state_dict(), f"{param.cosine_tune_encoder_weight}_best_{epoch+1}")
+            torch.save(classifier.module.state_dict(), f"{param.cosine_tune_classifier_weight}_best_{epoch+1}")
+
+        if (epoch + 1) % (param.finetune_num_epochs // 10) == 0:
+            torch.save(encoder.module.state_dict(), f"{param.cosine_tune_encoder_weight}_epoch_{epoch+1}")
+            torch.save(classifier.module.state_dict(), f"{param.cosine_tune_classifier_weight}_epoch_{epoch+1}")
 
     print("Finished cosine finetuning!")

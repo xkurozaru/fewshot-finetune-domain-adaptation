@@ -56,3 +56,23 @@ class ImageTransform:
 
     def __call__(self, img):
         return self.data_transform(img)
+
+
+class ImageTransformV2:
+    """Image transformation module."""
+
+    def __init__(self, input_size=384):
+        self.data_transform = nn.Sequential(
+            T.Resize((input_size, input_size)),
+        )
+        self.augment_transform = nn.Sequential(
+            T.RandAugment(4, 15),
+            T.AugMix(3, 3),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        )
+
+    def __call__(self, img):
+        return self.data_transform(img)
+
+    def augment(self, img):
+        return self.augment_transform(img)

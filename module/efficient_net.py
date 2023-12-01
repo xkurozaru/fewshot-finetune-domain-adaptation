@@ -38,3 +38,20 @@ class EfficientNetClassifier(nn.Module):
         """Forward pass of EfficientNet classifier."""
         x = self.classifier(x)
         return x
+
+
+class BaselinePP(nn.Module):
+    """Baseline++ model."""
+
+    def __init__(self, num_classes: int) -> None:
+        """Initialize Baseline++ model."""
+        super(BaselinePP, self).__init__()
+        self.protos_layer = nn.Linear(1280, num_classes, bias=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass of Baseline++ model."""
+        x = x / torch.norm(x, dim=1, keepdim=True)
+        protos = self.protos_layer.weight / torch.norm(self.protos_layer.weight, dim=1, keepdim=True)
+        cos_sim = torch.mm(x, protos.t())
+
+        return cos_sim

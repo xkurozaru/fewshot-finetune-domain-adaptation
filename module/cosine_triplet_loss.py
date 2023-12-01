@@ -18,6 +18,6 @@ class CosineTripletLoss(nn.Module):
         """Forward pass of Cosine Triplet loss module."""
         pos_sim = torch.cosine_similarity(x, p).mean()
         neg_sim = torch.cosine_similarity(x, n).mean()
-        loss = torch.clamp(1.0 - pos_sim + neg_sim - self.alpha, min=0.0)
+        loss = torch.clamp(1.0 - pos_sim + neg_sim + self.alpha, min=0.0)
         loss += torch.clamp(1.0 - pos_sim - self.beta, min=0.0)
         return loss
