@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from common import Dataset, ImageTransformV2, param, remove_glob
+from common import Dataset, ImageTransform, param, remove_glob
 from module import EfficientNetClassifier, EfficientNetEncoder
 
 
@@ -12,10 +12,9 @@ def pretrain():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # dataset
-    transform = ImageTransformV2()
     dataset = Dataset(
         root=param.src_path,
-        transform=transform,
+        transform=ImageTransform(),
     )
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.pretrain_batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
 
@@ -44,7 +43,6 @@ def pretrain():
         epoch_loss = 0.0
         for images, labels in tqdm(dataloader):
             images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
-            images = transform.augment_transform(images)
 
             # forward
             optimizer.zero_grad()

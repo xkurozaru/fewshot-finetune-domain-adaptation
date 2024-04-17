@@ -13,7 +13,7 @@ from tqdm import tqdm
 from common import Dataset, ImageTransform, param, set_seed
 from module import EfficientNetClassifier, EfficientNetEncoder
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 warnings.filterwarnings("ignore")
 
 BATCH_SIZE = 256

@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-seeds = [43, 44, 45, 46, 47]
+seeds = [42, 43, 44, 45, 46]
 
 
 def graph_f1():
     # CSVファイルのパスを指定
     files = {}
     for seed in seeds:
-        file1 = f"result/eggplant_v2S/{seed}/01_finetune/reports.csv"
-        file2 = f"result/eggplant_v2S/{seed}/02_dist_tune/reports.csv"
-        file3 = f"result/eggplant_v2S/{seed}/03_triplet_tune/reports.csv"
+        file1 = f"result/tomato/{seed}/01_finetune/reports.csv"
+        file2 = f"result/tomato/{seed}/02_dist_tune/reports.csv"
+        file3 = f"result/tomato/{seed}/03_triplet_tune/reports.csv"
         files[seed] = [file1, file2, file3]
 
     # CSVファイルを読み込む
@@ -26,6 +26,10 @@ def graph_f1():
     df1 = df1.groupby("Epoch").agg(["mean", "std"])
     df2 = df2.groupby("Epoch").agg(["mean", "std"])
     df3 = df3.groupby("Epoch").agg(["mean", "std"])
+
+    print(df1)
+    print(df2)
+    print(df3)
 
     # F1-Scoreをエラーバー付きの散布図で描画
     plt.errorbar(df1.index - 20, df1["F1_Score"]["mean"], fmt="og", yerr=df1["F1_Score"]["std"], label="fine-tune", capsize=5)
@@ -46,9 +50,9 @@ def graph_acc():
     # CSVファイルのパスを指定
     files = {}
     for seed in seeds:
-        file1 = f"result/eggplant_v2S/{seed}/01_finetune/reports.csv"
-        file2 = f"result/eggplant_v2S/{seed}/02_dist_tune/reports.csv"
-        file3 = f"result/eggplant_v2S/{seed}/03_triplet_tune/reports.csv"
+        file1 = f"result/tomato/{seed}/01_finetune/reports.csv"
+        file2 = f"result/tomato/{seed}/02_dist_tune/reports.csv"
+        file3 = f"result/tomato/{seed}/03_triplet_tune/reports.csv"
         files[seed] = [file1, file2, file3]
 
     # CSVファイルを読み込む
@@ -65,7 +69,11 @@ def graph_acc():
     df2 = df2.groupby("Epoch").agg(["mean", "std"])
     df3 = df3.groupby("Epoch").agg(["mean", "std"])
 
-    # F1-Scoreをエラーバー付きの散布図で描画
+    print(df1)
+    print(df2)
+    print(df3)
+
+    # Accuracyをエラーバー付きの散布図で描画
     plt.errorbar(df1.index - 20, df1["Acc"]["mean"], fmt="og", yerr=df1["Acc"]["std"], label="fine-tune", capsize=5)
     plt.errorbar(df2.index, df2["Acc"]["mean"], fmt="or", yerr=df2["Acc"]["std"], label="dist-tune", capsize=5)
     plt.errorbar(df3.index + 20, df3["Acc"]["mean"], fmt="ob", yerr=df3["Acc"]["std"], label="triplet-tune", capsize=5)
@@ -81,4 +89,4 @@ def graph_acc():
 
 
 if __name__ == "__main__":
-    graph_f1()
+    graph_acc()

@@ -70,7 +70,7 @@ def triplet_tune():
 
                 classify_loss = classify_criterion(p_outputs, p_labels)
                 dist_loss = dist_criterion(tgt_feature, p_feature, n_feature)
-                loss = classify_loss + dist_loss
+                loss = (1.0 - param.weight_ratio) * classify_loss + param.weight_ratio * dist_loss
 
             # backward
             scaler.scale(loss).backward()

@@ -12,14 +12,14 @@ from tqdm import tqdm
 from common import Dataset, ImageTransform, param, set_seed
 from module import EfficientNetClassifier, EfficientNetEncoder
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
 
 BATCH_SIZE = 256
 
 
 def main():
-    set_seed(42)
+    set_seed(param.seed)
     device = torch.device("cuda")
     dataset = Dataset(
         root=param.test_path,
@@ -30,8 +30,8 @@ def main():
     for epoch in range(100, 1001, 100):
         encoder = EfficientNetEncoder().to(device)
         classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
-        encoder.load_state_dict(torch.load(f"weight/triplet_tune_encoder.pth_epoch_{epoch}"))
-        classifier.load_state_dict(torch.load(f"weight/triplet_tune_classifier.pth_epoch_{epoch}"))
+        encoder.load_state_dict(torch.load(f"weight/dist_tune_encoder.pth_epoch_{epoch}"))
+        classifier.load_state_dict(torch.load(f"weight/dist_tune_classifier.pth_epoch_{epoch}"))
         encoder = nn.DataParallel(encoder)
         classifier = nn.DataParallel(classifier)
 

@@ -66,7 +66,7 @@ def dist_tune():
 
                 classify_loss = classify_criterion(src_outputs, src_labels)
                 dist_loss = dist_criterion(tgt_feature, src_feature)
-                loss = classify_loss + dist_loss
+                loss = (1.0 - param.weight_ratio) * classify_loss + param.weight_ratio * dist_loss
 
             # backward
             scaler.scale(loss).backward()

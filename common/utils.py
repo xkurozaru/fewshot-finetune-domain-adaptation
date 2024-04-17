@@ -11,6 +11,7 @@ import torchvision.transforms.v2 as T
 
 def set_seed(seed: int = 42):
     """Sets the seed for reproducibility."""
+    print(f"Set seed {seed}")
     random.seed(seed)
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)

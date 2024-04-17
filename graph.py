@@ -4,9 +4,9 @@ import pandas as pd
 
 def graph():
     # CSVファイルのパスを指定
-    file1 = "result/eggplant_v2S/47/01_finetune/reports.csv"
-    file2 = "result/eggplant_v2S/47/02_dist_tune/reports.csv"
-    file3 = "result/eggplant_v2S/47/03_triplet_tune/reports.csv"
+    file1 = "result/tomato/44/01_fintune/reports.csv"
+    file2 = "result/tomato/44/02_dist_tune/reports.csv"
+    file3 = "result/tomato/44/03_triplet_tune/reports.csv"
 
     # CSVファイルを読み込む
     df1 = pd.read_csv(file1, header=None, names=["Epoch", "Acc1", "F1_Score1"])
@@ -25,7 +25,7 @@ def graph():
 
     # 範囲を指定
     plt.xlim(100, 1000)
-    plt.ylim(70.0, 90.0)
+    plt.ylim(60.0, 80.0)
 
     # グラフを表示
     plt.savefig("result/report_graph.png")
