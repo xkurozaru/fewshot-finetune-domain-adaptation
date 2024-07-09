@@ -3,7 +3,7 @@ import sys
 import warnings
 
 from common import param, set_seed
-from core import cosine_tune, dist_tune, finetune, pretrain, triplet_tune
+from core import cosine_tune, dann_tune, dist_tune, finetune, pretrain, triplet_tune
 
 
 def main():
@@ -26,6 +26,8 @@ def main():
         triplet_tune()
     elif args[1] == "cosine_tune":
         cosine_tune()
+    elif args[1] == "dann_tune":
+        dann_tune()
     else:
         print("Invalid argument.")
         return

@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn as nn
+from torch.autograd import Function
 from torchvision.models import EfficientNet_V2_S_Weights, efficientnet_v2_s
 
 
@@ -40,18 +41,35 @@ class EfficientNetClassifier(nn.Module):
         return x
 
 
-class BaselinePP(nn.Module):
-    """Baseline++ model."""
+class GradientReversalLayer(Function):
+    @staticmethod
+    def forward(context, x, constant):
+        context.constant = constant
+        return x.view_as(x) * constant
+
+    @staticmethod
+    def backward(context, grad):
+        return grad.neg() * context.constant, None
+
+
+class DANN(nn.Module):
+    """Domain Adversarial Neural Network (DANN)."""
 
     def __init__(self, num_classes: int) -> None:
-        """Initialize Baseline++ model."""
-        super(BaselinePP, self).__init__()
-        self.protos_layer = nn.Linear(1280, num_classes, bias=False)
+        """Initialize DANN."""
+        super(DANN, self).__init__()
+        self.encoder = EfficientNetEncoder()
+        self.classifier = EfficientNetClassifier(num_classes)
+        self.domain_classifier = nn.Sequential(
+            nn.Linear(1280, 1024),
+            nn.Mish(),
+            nn.Dropout(0.2),
+            nn.Linear(1024, 1),
+        )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass of Baseline++ model."""
-        x = x / torch.norm(x, dim=1, keepdim=True)
-        protos = self.protos_layer.weight / torch.norm(self.protos_layer.weight, dim=1, keepdim=True)
-        cos_sim = torch.mm(x, protos.t())
-
-        return cos_sim
+    def forward(self, x: torch.Tensor) -> tuple:
+        """Forward pass of DANN."""
+        x = self.encoder(x)
+        y = self.classifier(x)
+        d = self.domain_classifier(GradientReversalLayer.apply(x, 1.0))
+        return x, y, d

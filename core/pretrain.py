@@ -1,10 +1,8 @@
-import os
-
 import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from common import Dataset, ImageTransform, param, remove_glob
+from common import Dataset, ImageTransform, param
 from module import EfficientNetClassifier, EfficientNetEncoder
 
 
@@ -16,7 +14,7 @@ def pretrain():
         root=param.src_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.pretrain_batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.pretrain_batch_size, shuffle=True, num_workers=8, pin_memory=True)
 
     # model
     encoder = EfficientNetEncoder().to(device)
@@ -38,7 +36,6 @@ def pretrain():
     encoder.train()
     classifier.train()
     print("Start pretraining...")
-    min_loss = 100.0
     for epoch in range(param.pretrain_num_epochs):
         epoch_loss = 0.0
         for images, labels in tqdm(dataloader):
@@ -62,14 +59,7 @@ def pretrain():
         print(f"Epoch: {epoch+1}/{param.pretrain_num_epochs} | Loss: {epoch_loss:.4f}")
 
         # save model
-        if epoch_loss < min_loss:
-            min_loss = epoch_loss
-            remove_glob(f"{param.pretrain_encoder_weight}_best_*")
-            remove_glob(f"{param.pretrain_classifier_weight}_best_*")
-            torch.save(encoder.module.state_dict(), f"{param.pretrain_encoder_weight}_best_{epoch+1}")
-            torch.save(classifier.module.state_dict(), f"{param.pretrain_classifier_weight}_best_{epoch+1}")
-
-        if (epoch + 1) % (param.pretrain_num_epochs // 10) == 0:
+        if (epoch + 1) % 10 == 0:
             torch.save(encoder.module.state_dict(), f"{param.pretrain_encoder_weight}_epoch_{epoch+1}")
             torch.save(classifier.module.state_dict(), f"{param.pretrain_classifier_weight}_epoch_{epoch+1}")
 

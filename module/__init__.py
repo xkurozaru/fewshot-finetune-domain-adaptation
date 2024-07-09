@@ -1,6 +1,6 @@
 from .cosine_triplet_loss import CosineTripletLoss
-from .efficient_net import EfficientNetClassifier, EfficientNetEncoder
+from .efficient_net import DANN, EfficientNetClassifier, EfficientNetEncoder
 from .l2_loss import L2Loss
 from .triplet_loss import TripletLoss
 
-all = (EfficientNetClassifier, EfficientNetEncoder, L2Loss, TripletLoss, CosineTripletLoss)
+all = (EfficientNetClassifier, EfficientNetEncoder, L2Loss, TripletLoss, CosineTripletLoss, DANN)

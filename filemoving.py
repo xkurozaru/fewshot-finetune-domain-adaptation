@@ -5,19 +5,21 @@ import shutil
 
 from common import param, set_seed
 
+N = 3
+
 
 def leaking():
-    # クラス名を取得
     set_seed(param.seed)
 
+    # クラス名を取得
     classes = os.listdir(param.test_path)
     classes.sort()
 
-    # テストデータから各クラス10枚、ランダムに抽出
+    # テストデータから各クラスN枚、ランダムに抽出
     for cls in classes:
         img_paths = os.listdir(osp.join(param.test_path, cls))
         img_paths.sort()
-        img_paths = random.sample(img_paths, 10)
+        img_paths = random.sample(img_paths, N)
 
         # 各クラスの画像をfew_shotディレクトリに移動
         for img_path in img_paths:

@@ -1,10 +1,8 @@
-import os
-
 import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from common import Dataset, DivideDataset, ImageTransform, param, remove_glob
+from common import Dataset, DivideDataset, ImageTransform, param
 from module import EfficientNetClassifier, EfficientNetEncoder, L2Loss
 
 
@@ -16,7 +14,7 @@ def dist_tune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=os.cpu_count(), pin_memory=True)
+    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=8, pin_memory=True)
     src_dataset = DivideDataset(
         root=param.src_path,
         transform=ImageTransform(),
@@ -46,7 +44,6 @@ def dist_tune():
     encoder.train()
     classifier.train()
     print("Start dist finetuning...")
-    min_loss = 100.0
     for epoch in range(param.finetune_num_epochs):
         epoch_classify_loss = 0.0
         epoch_dist_loss = 0.0
@@ -62,11 +59,13 @@ def dist_tune():
                 src_feature = encoder(src_images)
                 tgt_feature = encoder(tgt_images)
 
-                src_outputs = classifier(src_feature)
+                # src_outputs = classifier(src_feature)
+                tgt_outputs = classifier(tgt_feature)
 
-                classify_loss = classify_criterion(src_outputs, src_labels)
+                # classify_loss = classify_criterion(src_outputs, src_labels)
+                classify_loss = classify_criterion(tgt_outputs, tgt_labels)
                 dist_loss = dist_criterion(tgt_feature, src_feature)
-                loss = (1.0 - param.weight_ratio) * classify_loss + param.weight_ratio * dist_loss
+                loss = classify_loss + dist_loss
 
             # backward
             scaler.scale(loss).backward()
@@ -81,14 +80,7 @@ def dist_tune():
         print(f"Epoch: {epoch + 1}/{param.finetune_num_epochs} | Classify Loss: {epoch_classify_loss:.4f} | Dist Loss: {epoch_dist_loss:.4f}")
 
         # save model
-        if epoch_classify_loss + epoch_dist_loss < min_loss:
-            min_loss = epoch_classify_loss + epoch_dist_loss
-            remove_glob(f"{param.dist_tune_encoder_weight}_best_*")
-            remove_glob(f"{param.dist_tune_classifier_weight}_best_*")
-            torch.save(encoder.module.state_dict(), f"{param.dist_tune_encoder_weight}_best_{epoch+1}")
-            torch.save(classifier.module.state_dict(), f"{param.dist_tune_classifier_weight}_best_{epoch+1}")
-
-        if (epoch + 1) % (param.finetune_num_epochs // 10) == 0:
+        if (epoch + 1) % 100 == 0:
             torch.save(encoder.module.state_dict(), f"{param.dist_tune_encoder_weight}_epoch_{epoch+1}")
             torch.save(classifier.module.state_dict(), f"{param.dist_tune_classifier_weight}_epoch_{epoch+1}")
 

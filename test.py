@@ -26,13 +26,13 @@ def main():
         root=param.test_path,
         transform=ImageTransform(phase="test"),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=os.cpu_count(), pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True)
 
     encoder = EfficientNetEncoder().to(device)
     classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
 
-    encoder.load_state_dict(torch.load("weight/finetune_encoder.pth_epoch_100"))
-    classifier.load_state_dict(torch.load("weight/finetune_classifier.pth_epoch_100"))
+    encoder.load_state_dict(torch.load("weight/encoder.pth"))
+    classifier.load_state_dict(torch.load("weight/classifier.pth"))
 
     encoder = nn.DataParallel(encoder)
     classifier = nn.DataParallel(classifier)

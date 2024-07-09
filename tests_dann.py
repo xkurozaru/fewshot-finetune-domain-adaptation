@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 
 from common import Dataset, ImageTransform, param, set_seed
-from module import EfficientNetClassifier, EfficientNetEncoder
+from module import DANN
 
 os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
@@ -25,18 +25,16 @@ def main():
         root=param.test_path,
         transform=ImageTransform(phase="test"),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=os.cpu_count(), pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True)
 
+    f1scores = []
     for epoch in range(100, 1001, 100):
-        encoder = EfficientNetEncoder().to(device)
-        classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
-        encoder.load_state_dict(torch.load(f"weight/dist_tune_encoder.pth_epoch_{epoch}"))
-        classifier.load_state_dict(torch.load(f"weight/dist_tune_classifier.pth_epoch_{epoch}"))
-        encoder = nn.DataParallel(encoder)
-        classifier = nn.DataParallel(classifier)
+        # for epoch in range(10, 201, 10):
+        model = DANN(len(dataset.classes)).to(device)
+        model.load_state_dict(torch.load(f"weight/dann_tune.pth_epoch_{epoch}"))
+        model = nn.DataParallel(model)
+        model.eval()
 
-        encoder.eval()
-        classifier.eval()
         predict_labels = []
         true_labels = []
 
@@ -46,7 +44,7 @@ def main():
                 inputs = inputs.to(device, non_blocking=True)
                 labels = labels.to(device, non_blocking=True)
 
-                outputs = classifier(encoder(inputs))
+                _, outputs, _ = model(inputs)
                 _, preds = torch.max(outputs, 1)
 
                 predict_labels.extend(preds.tolist())
@@ -66,6 +64,8 @@ def main():
         )
         report_df = pd.DataFrame(report).transpose() * 100.0
         report_df = report_df.drop("support", axis=1)
+        f1scores.append(report_df["f1-score"]["macro avg"])
+        print(f"macro avg f1-score: {report_df['f1-score']['macro avg']:.2f}")
 
         plt.figure(figsize=(20, 15))
         sns.heatmap(
@@ -75,7 +75,7 @@ def main():
             cmap="Blues",
             cbar=False,
         )
-        plt.savefig(f"result/report_{epoch}.png")
+        plt.savefig(f"result/dann_report_{epoch}.png")
 
         # confusion matrixをseabornで表示して画像保存
         cm = confusion_matrix(y_true=true_labels, y_pred=predict_labels, normalize="true")
@@ -83,7 +83,10 @@ def main():
 
         plt.figure(figsize=(20, 18))
         sns.heatmap(cm_df, annot=True, fmt=".1f", cmap="BuGn", square=True, cbar=False)
-        plt.savefig(f"result/confusion_matrix_{epoch}.png")
+        plt.savefig(f"result/dann_confusion_matrix_{epoch}.png")
+
+    with open("result/dann_tune_f1scores.csv", "a") as f:
+        f.write(",".join(f"{score:.2f}" for score in f1scores) + "\n")
 
 
 if __name__ == "__main__":
