@@ -84,7 +84,7 @@ def triplet_tune():
         print(f"Epoch: {epoch + 1}/{param.finetune_num_epochs} | Classify Loss: {epoch_classify_loss:.4f} | Dist Loss: {epoch_dist_loss:.4f}")
 
         # save model
-        if (epoch + 1) % 100 == 0:
+        if (epoch + 1) in param.test_epochs:
             torch.save(encoder.module.state_dict(), f"{param.triplet_tune_encoder_weight}_epoch_{epoch+1}")
             torch.save(classifier.module.state_dict(), f"{param.triplet_tune_classifier_weight}_epoch_{epoch+1}")
 

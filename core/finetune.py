@@ -62,7 +62,7 @@ def finetune():
         print(f"Epoch: {epoch+1}/{param.finetune_num_epochs} | Loss: {epoch_loss:.4f}")
 
         # save model
-        if (epoch + 1) % 100 == 0:
+        if (epoch + 1) in param.test_epochs:
             torch.save(encoder.module.state_dict(), f"{param.finetune_encoder_weight}_epoch_{epoch+1}")
             torch.save(classifier.module.state_dict(), f"{param.finetune_classifier_weight}_epoch_{epoch+1}")
 

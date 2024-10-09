@@ -71,7 +71,7 @@ def dann_tune():
         print(f"Epoch: {epoch + 1}/{param.finetune_num_epochs} | Classify Loss: {epoch_classify_loss:.4f} | Domain Loss: {epoch_domain_loss:.4f}")
 
         # save model
-        if (epoch + 1) % 100 == 0:
+        if (epoch + 1) in param.test_epochs:
             torch.save(model.module.state_dict(), f"{param.dann_tune_model_weight}_epoch_{epoch+1}")
 
     print("Finished DANN finetuning!")

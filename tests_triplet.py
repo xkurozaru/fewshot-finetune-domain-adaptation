@@ -15,7 +15,7 @@ from module import EfficientNetClassifier, EfficientNetEncoder
 os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
 
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 
 
 def main():
@@ -28,8 +28,8 @@ def main():
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True)
 
     f1scores = []
-    for epoch in range(100, 1001, 100):
-        # for epoch in range(10, 201, 10):
+    # for epoch in range(100, 1001, 100):
+    for epoch in param.test_epochs:
         encoder = EfficientNetEncoder().to(device)
         classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
         encoder.load_state_dict(torch.load(f"weight/triplet_tune_encoder.pth_epoch_{epoch}"))
@@ -89,7 +89,7 @@ def main():
         sns.heatmap(cm_df, annot=True, fmt=".1f", cmap="BuGn", square=True, cbar=False)
         plt.savefig(f"result/triplet_tune_confusion_matrix_{epoch}.png")
 
-    with open("result/triplet_tune_f1scores.csv", "a") as f:
+    with open("result/triplet_tune_scores.csv", "a") as f:
         f.write(",".join(f"{score:.2f}" for score in f1scores) + "\n")
 
 
