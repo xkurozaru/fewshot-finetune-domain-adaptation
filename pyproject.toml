@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "fewshot-finetune-domain-adaptation"
+version = "0.1.0"
+description = ""
+authors = ["xkurozaru <kurozaru.210@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+torch = {version = "^2.4.1+cu121", source = "torch_cu121"}
+torchvision = {version = "^0.19.1+cu121", source = "torch_cu121"}
+torchinfo = "^1.8.0"
+pandas = "^2.2.3"
+scikit-learn = "^1.5.2"
+matplotlib = "^3.9.2"
+seaborn = "^0.13.2"
+tqdm = "^4.66.5"
+
+[[tool.poetry.source]]
+name = "torch_cu121"
+url = "https://download.pytorch.org/whl/cu121/"
+priority = "explicit"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

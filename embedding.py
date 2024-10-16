@@ -5,38 +5,37 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
-from modules.models import Encoder
-from modules.utils import ImageTransform, MyDataset, set_seed
 from sklearn.manifold import TSNE
 from torchinfo import summary
 from tqdm import tqdm
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+from common import param
+from common.utils import Dataset, ImageTransform, set_seed
+from module.efficient_net import EfficientNetEncoder
+
+os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
 
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 
 
 def main():
-    set_seed(42)
+    set_seed(param.seed)
     device = torch.device("cuda")
 
-    dataset = MyDataset(
-        root="/data2/eto/Dataset/eggplant_fewclass/7class_leak/train/",
+    dataset = Dataset(
+        root=param.src_path,
         transform=ImageTransform(input_size=480, phase="test"),
     )
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=BATCH_SIZE, num_workers=16, pin_memory=True, shuffle=True
-    )
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True, shuffle=True)
 
-    # root="/data2/eto/Dataset/eggplant_fewclass/7class_leak/test/",
-    testset = MyDataset(
-        root="/data2/eto/Dataset/eggplant_fewclass/7class_leak/test/",
+    testset = Dataset(
+        root=param.test_path,
         transform=ImageTransform(input_size=480, phase="test"),
     )
-    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, num_workers=16, pin_memory=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True)
 
-    encoder = Encoder().to(device)
+    encoder = EfficientNetEncoder().to(device)
     encoder.load_state_dict(torch.load("weights/triplet_tune_encoder.pth"))
     encoder = nn.DataParallel(encoder)
 

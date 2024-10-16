@@ -5,7 +5,7 @@ import shutil
 
 from common import param, set_seed
 
-N = 10
+N = 3
 
 
 def leaking():
