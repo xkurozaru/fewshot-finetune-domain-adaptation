@@ -24,6 +24,7 @@ priority = "explicit"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
+bpytop = "^1.0.68"
 
 [build-system]
 requires = ["poetry-core"]

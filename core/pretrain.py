@@ -14,7 +14,13 @@ def pretrain():
         root=param.src_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.pretrain_batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=param.pretrain_batch_size,
+        shuffle=True,
+        num_workers=8,
+        pin_memory=True,
+    )
 
     # model
     encoder = EfficientNetEncoder().to(device)

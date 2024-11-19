@@ -14,7 +14,7 @@ def finetune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.batch_size, shuffle=True, num_workers=param.num_workers, pin_memory=True)
 
     # model
     encoder = EfficientNetEncoder().to(device)

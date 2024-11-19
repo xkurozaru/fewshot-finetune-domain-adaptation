@@ -5,7 +5,9 @@ import shutil
 
 from common import param, set_seed
 
-N = 3
+N = 10
+TEST_PATH = param.test_path
+TGT_PATH = param.tgt_path
 
 
 def leaking():
@@ -54,4 +56,4 @@ def restoreing():
 
 if __name__ == "__main__":
     restoreing()
-    leaking()
+    # leaking()

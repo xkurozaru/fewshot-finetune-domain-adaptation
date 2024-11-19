@@ -3,7 +3,7 @@ import sys
 import warnings
 
 from common import param, set_seed
-from core import cosine_tune, dann_tune, dist_tune, finetune, pretrain, triplet_tune
+from core import cosine_tune, dann, dann_tune, dist_tune, finetune, pretrain, triplet_tune
 
 
 def main():
@@ -18,6 +18,8 @@ def main():
 
     if args[1] == "pretrain":
         pretrain()
+    elif args[1] == "dann":
+        dann()
     elif args[1] == "finetune":
         finetune()
     elif args[1] == "dist_tune":

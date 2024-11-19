@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 
 from common import Dataset, ImageTransform, param, set_seed
-from module import EfficientNetClassifier, EfficientNetEncoder
+from module import DANN
 
 os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
@@ -30,15 +30,11 @@ def main():
     f1scores = []
     # for epoch in range(100, 1001, 100):
     for epoch in param.test_epochs:
-        encoder = EfficientNetEncoder().to(device)
-        classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
-        encoder.load_state_dict(torch.load(f"weight/finetune_encoder.pth_epoch_{epoch}"))
-        classifier.load_state_dict(torch.load(f"weight/finetune_classifier.pth_epoch_{epoch}"))
-        encoder = nn.DataParallel(encoder)
-        classifier = nn.DataParallel(classifier)
+        model = DANN(len(dataset.classes)).to(device)
+        model.load_state_dict(torch.load(f"weight/dann_tune.pth_epoch_{epoch}"))
+        model = nn.DataParallel(model)
+        model.eval()
 
-        encoder.eval()
-        classifier.eval()
         predict_labels = []
         true_labels = []
 
@@ -48,7 +44,7 @@ def main():
                 inputs = inputs.to(device, non_blocking=True)
                 labels = labels.to(device, non_blocking=True)
 
-                outputs = classifier(encoder(inputs))
+                _, outputs, _ = model(inputs)
                 _, preds = torch.max(outputs, 1)
 
                 predict_labels.extend(preds.tolist())
@@ -82,7 +78,7 @@ def main():
             cmap="Blues",
             cbar=False,
         )
-        plt.savefig(f"{save_dir}/finetune_report_{epoch}.png")
+        plt.savefig(f"{save_dir}/dann_tune_report_{epoch}.png")
 
         # confusion matrixをseabornで表示して画像保存
         cm = confusion_matrix(y_true=true_labels, y_pred=predict_labels, normalize="true")
@@ -90,9 +86,9 @@ def main():
 
         plt.figure(figsize=(20, 18))
         sns.heatmap(cm_df, annot=True, fmt=".1f", cmap="BuGn", square=True, cbar=False)
-        plt.savefig(f"{save_dir}/finetune_confusion_matrix_{epoch}.png")
+        plt.savefig(f"{save_dir}/dann_tune_confusion_matrix_{epoch}.png")
 
-    with open("result/finetune_scores.csv", "a") as f:
+    with open("result/dann_tune_scores.csv", "a") as f:
         f.write(",".join(f"{score:.2f}" for score in f1scores) + "\n")
 
 

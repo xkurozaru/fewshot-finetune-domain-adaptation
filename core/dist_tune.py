@@ -14,7 +14,7 @@ def dist_tune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    tgt_dataloader = torch.utils.data.DataLoader(tgt_dataset, batch_size=param.batch_size, shuffle=True, num_workers=param.num_workers, pin_memory=True)
     src_dataset = DivideDataset(
         root=param.src_path,
         transform=ImageTransform(),

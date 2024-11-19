@@ -116,3 +116,28 @@ class DivideDataset(torch.utils.data.Dataset):
             true.append(self.classes.index(target))
 
         return torch.stack(images), torch.tensor(true).to(self.device)
+
+
+class DoubleDataset(torch.utils.data.Dataset):
+    def __init__(self, src_root: str, tgt_root, transform):
+        self.classes = [d.name for d in os.scandir(src_root) if d.is_dir()]
+        self.classes.sort()
+        self.class_to_idx = make_class_to_idx(src_root)
+
+        self.src_items = make_dataset(src_root, self.class_to_idx)
+        self.tgt_items = make_dataset(tgt_root, self.class_to_idx)
+        self.transform = transform
+
+    def __getitem__(self, index):
+        src_path, src_target = self.src_items[index]
+        src_img = read_image(src_path) / 255.0
+        src_img = self.transform(src_img)
+
+        tgt_path, tgt_target = random.choice(self.tgt_items)
+        tgt_img = read_image(tgt_path) / 255.0
+        tgt_img = self.transform(tgt_img)
+
+        return (src_img, src_target), (tgt_img, tgt_target)
+
+    def __len__(self):
+        return len(self.src_items)

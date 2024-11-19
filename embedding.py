@@ -1,4 +1,5 @@
 import os
+import random
 import warnings
 
 import matplotlib.pyplot as plt
@@ -10,13 +11,16 @@ from torchinfo import summary
 from tqdm import tqdm
 
 from common import param
-from common.utils import Dataset, ImageTransform, set_seed
-from module.efficient_net import EfficientNetEncoder
+from common.dataset import Dataset
+from common.utils import ImageTransform, set_seed
+from module.efficient_net import DANN
 
 os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
 
 BATCH_SIZE = 128
+SAMPLE_SIZE = 500
+WORKER_SIZE = 8
 
 
 def main():
@@ -25,19 +29,23 @@ def main():
 
     dataset = Dataset(
         root=param.src_path,
-        transform=ImageTransform(input_size=480, phase="test"),
+        transform=ImageTransform(phase="test"),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=WORKER_SIZE, pin_memory=True, shuffle=False)
 
     testset = Dataset(
         root=param.test_path,
-        transform=ImageTransform(input_size=480, phase="test"),
+        transform=ImageTransform(phase="test"),
     )
-    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, num_workers=8, pin_memory=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, num_workers=WORKER_SIZE, pin_memory=True, shuffle=False)
 
-    encoder = EfficientNetEncoder().to(device)
-    encoder.load_state_dict(torch.load("weights/triplet_tune_encoder.pth"))
-    encoder = nn.DataParallel(encoder)
+    # encoder = EfficientNetEncoder().to(device)
+    # encoder.load_state_dict(torch.load("weight/dist_tune_encoder.pth_epoch_1000"))
+    # encoder = nn.DataParallel(encoder)
+
+    model = DANN(len(dataset.classes)).to(device)
+    model.load_state_dict(torch.load("weight/dann_tune.pth_epoch_1000"))
+    encoder = nn.DataParallel(model.encoder)
 
     summary(model=encoder.module, input_size=(BATCH_SIZE, 3, 480, 480))
 
@@ -48,22 +56,20 @@ def main():
     y = []
     print("Start embedding...")
     with torch.inference_mode():
-        for inputs, labels, _ in tqdm(dataloader):
+        for inputs, labels in tqdm(dataloader):
             inputs = inputs.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
             outputs = encoder(inputs)
             X = np.append(X, outputs.cpu().detach().numpy(), axis=0)
             y.extend(labels.tolist())
-            if len(y) >= len(testset):
-                break
     print("Finish embedding!")
 
     X_test = np.empty((0, 1280))
     y_test = []
     print("Start embedding...")
     with torch.inference_mode():
-        for inputs, labels, _ in tqdm(testloader):
+        for inputs, labels in tqdm(testloader):
             inputs = inputs.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
@@ -93,13 +99,14 @@ def main():
 
     for i, target in enumerate(plotclasses):
         indices = [i for i, x in enumerate(targets) if x == target]
+        indices = random.sample(indices, min(SAMPLE_SIZE, len(indices)))
         if "-S" in target:
             maker = "o"
-            coler = plt.get_cmap("gist_rainbow")(i / len(plotclasses))
+            coler = plt.get_cmap("gist_rainbow")((i // 2) / (len(plotclasses) // 2))
             size = 20
         elif "-T" in target:
             maker = "x"
-            coler = plt.get_cmap("gist_rainbow")(i / len(plotclasses))
+            coler = plt.get_cmap("gist_rainbow")((i // 2) / (len(plotclasses) // 2))
             size = 20
         plt.scatter(
             embeddings[indices, 0],
@@ -112,7 +119,7 @@ def main():
         )
     plt.legend()
     plt.axis("off")
-    plt.savefig("results/embeddings.png")
+    plt.savefig("result/embeddings_dann.png")
     print("Finish plotting!")
 
 

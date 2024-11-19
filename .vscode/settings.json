@@ -1,4 +1,11 @@
 {
+  "files.watcherExclude": {
+    "**": true
+  },
+  "files.exclude": {
+    ".venv": true,
+    "**/__pycache__": true,
+  },
   "[python]": {
     "editor.tabSize": 4,
     "editor.formatOnSave": true,
