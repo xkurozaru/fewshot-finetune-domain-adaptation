@@ -32,8 +32,8 @@ def main():
     for epoch in param.test_epochs:
         encoder = EfficientNetEncoder().to(device)
         classifier = EfficientNetClassifier(num_classes=len(dataset.classes)).to(device)
-        encoder.load_state_dict(torch.load(f"weight/finetune_encoder.pth_epoch_{epoch}"))
-        classifier.load_state_dict(torch.load(f"weight/finetune_classifier.pth_epoch_{epoch}"))
+        encoder.load_state_dict(torch.load(f"{param.finetune_encoder_weight}_epoch_{epoch}"))
+        classifier.load_state_dict(torch.load(f"{param.finetune_classifier_weight}_epoch_{epoch}"))
         encoder = nn.DataParallel(encoder)
         classifier = nn.DataParallel(classifier)
 

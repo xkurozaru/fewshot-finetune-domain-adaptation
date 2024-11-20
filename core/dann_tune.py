@@ -32,7 +32,7 @@ def dann_tune():
     domain_criterion = nn.BCEWithLogitsLoss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=param.lr)
-    scaler = torch.cuda.amp.GradScaler(2**12)
+    scaler = torch.GradScaler(device=device.type, init_scale=2**16)
 
     model.train()
     print("Start DANN finetuning...")
@@ -45,7 +45,7 @@ def dann_tune():
             src_images, src_labels = src_dataset.get_random_images_by_labels(tgt_labels.tolist())
             src_images, src_labels = src_images.to(device, non_blocking=True), src_labels.to(device, non_blocking=True)
 
-            domains = torch.cat([torch.zeros(src_images.size(0), 1), torch.ones(tgt_images.size(0), 1)], dim=0).to(device)
+            domains = torch.cat([torch.zeros(src_images.size(0), 1), torch.ones(tgt_images.size(0), 1)], dim=0).to(device, non_blocking=True)
 
             # forward
             optimizer.zero_grad()

@@ -39,7 +39,7 @@ def dist_tune():
         ],
         lr=param.lr,
     )
-    scaler = torch.cuda.amp.GradScaler(2**12)
+    scaler = torch.GradScaler(device=device.type, init_scale=2**16)
 
     encoder.train()
     classifier.train()
