@@ -31,7 +31,7 @@ def main():
     for epoch in range(10, 101, 10):
         # for epoch in param.test_epochs:
         model = DANN(len(dataset.classes)).to(device)
-        model.load_state_dict(torch.load(f"weight/dann.pth_epoch_{epoch}"))
+        model.load_state_dict(torch.load(f"{param.dann_model_weight}_epoch_{epoch}"))
         model = nn.DataParallel(model)
         model.eval()
 
