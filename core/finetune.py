@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from common import Dataset, ImageTransform, param
@@ -14,7 +15,13 @@ def finetune():
         root=param.tgt_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=param.batch_size, shuffle=True, num_workers=param.num_workers, pin_memory=True)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=param.batch_size,
+        shuffle=True,
+        num_workers=param.num_workers,
+        pin_memory=True,
+    )
 
     # model
     encoder = EfficientNetEncoder().to(device)

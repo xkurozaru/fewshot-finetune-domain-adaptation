@@ -46,76 +46,63 @@ class Dataset(torch.utils.data.Dataset):
         return len(self.items)
 
 
-class DivideDataset(torch.utils.data.Dataset):
-    def __init__(self, root: str, transform, device: torch.device = torch.device("cuda")):
-        self.classes = [d.name for d in os.scandir(root) if d.is_dir()]
+class AnkerDataset(torch.utils.data.Dataset):
+    def __init__(self, anker_root: str, sample_root: str, transform, sample_type="positive"):
+        self.classes = [d.name for d in os.scandir(anker_root) if d.is_dir()]
         self.classes.sort()
-        self.class_to_idx = make_class_to_idx(root)
-        self.device = device
+        self.class_to_idx = make_class_to_idx(anker_root)
 
-        self.items = {c: [] for c in self.classes}
+        self.anker_items = make_dataset(anker_root, self.class_to_idx)
+        self.sample_items = {c: [] for c in self.classes}
         for target in sorted(self.class_to_idx.keys()):
-            d = os.path.join(root, target)
+            d = os.path.join(sample_root, target)
             if not os.path.isdir(d):
                 continue
             for dir, _, fnames in sorted(os.walk(d)):
                 for fname in sorted(fnames):
                     path = os.path.join(dir, fname)
-                    item = path
-                    self.items[target].append(item)
-
+                    item = (path, self.class_to_idx[target])
+                    self.sample_items[target].append(item)
         self.transform = transform
+        self.sample_type = sample_type
 
-    def get_image_on_device(self, path):
-        img = read_image(path).to(self.device) / 255.0
+    def get_positive_image(self, target):
+        path, target = random.choice(self.sample_items[target])
+        img = read_image(path) / 255.0
         img = self.transform(img)
-        return img
+        return img, target
 
-    def get_all_images_by_label(self, label):
-        images = []
-        target = self.classes[label]
-        for path in self.items[target]:
-            img = self.get_image_on_device(path)
-            images.append(img)
+    def get_negative_image(self, target):
+        removed = self.classes.copy()
+        removed.remove(target)
+        path, target = random.choice(self.sample_items[random.choice(removed)])
+        img = read_image(path) / 255.0
+        img = self.transform(img)
+        return img, target
 
-        true = []
-        for _ in range(len(images)):
-            true.append(label)
+    def __getitem__(self, index):
+        anker_path, anker_target = self.anker_items[index]
+        anker_img = read_image(anker_path) / 255.0
+        anker_img = self.transform(anker_img)
 
-        return torch.stack(images), torch.tensor(true).to(self.device)
+        if self.sample_type == "positive":
+            positive_img, positive_target = self.get_positive_image(self.classes[anker_target])
+            return (anker_img, anker_target), (positive_img, positive_target)
 
-    def get_random_images_by_labels(self, labels):
-        images = []
-        targets = [self.classes[label] for label in labels]
-        for target in targets:
-            path = random.choice(self.items[target])
-            img = self.get_image_on_device(path)
-            images.append(img)
+        elif self.sample_type == "negative":
+            negative_img, negative_target = self.get_negative_image(self.classes[anker_target])
+            return (anker_img, anker_target), (negative_img, negative_target)
 
-        true = []
-        for target in targets:
-            true.append(self.classes.index(target))
+        elif self.sample_type == "both":
+            positive_img, positive_target = self.get_positive_image(self.classes[anker_target])
+            negative_img, negative_target = self.get_negative_image(self.classes[anker_target])
+            return (anker_img, anker_target), (positive_img, positive_target), (negative_img, negative_target)
 
-        return torch.stack(images), torch.tensor(true).to(self.device)
+        else:
+            raise ValueError("sample_type must be 'positive', 'negative' or 'both'.")
 
-    def get_random_notequal_images_by_labels(self, labels):
-        images = []
-        targets = []
-        for label in labels:
-            removed = self.classes.copy()
-            removed.remove(self.classes[label])
-            target = random.choice(removed)
-            targets.append(target)
-        for target in targets:
-            path = random.choice(self.items[target])
-            img = self.get_image_on_device(path)
-            images.append(img)
-
-        true = []
-        for target in targets:
-            true.append(self.classes.index(target))
-
-        return torch.stack(images), torch.tensor(true).to(self.device)
+    def __len__(self):
+        return len(self.anker_items)
 
 
 class DoubleDataset(torch.utils.data.Dataset):

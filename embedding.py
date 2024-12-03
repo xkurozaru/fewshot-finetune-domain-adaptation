@@ -18,9 +18,9 @@ from module.efficient_net import DANN
 os.environ["CUDA_VISIBLE_DEVICES"] = param.gpu_ids
 warnings.filterwarnings("ignore")
 
-BATCH_SIZE = 128
-SAMPLE_SIZE = 500
-WORKER_SIZE = 8
+BATCH_SIZE = 256
+SAMPLE_SIZE = 200
+WORKER_SIZE = 12
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
     testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE, num_workers=WORKER_SIZE, pin_memory=True, shuffle=False)
 
     # encoder = EfficientNetEncoder().to(device)
-    # encoder.load_state_dict(torch.load("weight/dist_tune_encoder.pth_epoch_1000"))
+    # encoder.load_state_dict(torch.load("weight/triplet_tune_encoder.pth_epoch_1000"))
     # encoder = nn.DataParallel(encoder)
 
     model = DANN(len(dataset.classes)).to(device)
@@ -93,6 +93,7 @@ def main():
 
     # targetsで色分けしてプロット
     print("Start plotting...")
+    plt.rcParams["font.size"] = 18
     plt.figure(figsize=(16, 16))
     plotclasses = list(set(targets))
     plotclasses.sort()
@@ -102,24 +103,22 @@ def main():
         indices = random.sample(indices, min(SAMPLE_SIZE, len(indices)))
         if "-S" in target:
             maker = "o"
-            coler = plt.get_cmap("gist_rainbow")((i // 2) / (len(plotclasses) // 2))
-            size = 20
+            alpha = 0.3
         elif "-T" in target:
             maker = "x"
-            coler = plt.get_cmap("gist_rainbow")((i // 2) / (len(plotclasses) // 2))
-            size = 20
+            alpha = 0.6
         plt.scatter(
             embeddings[indices, 0],
             embeddings[indices, 1],
-            s=size,
-            c=coler,
+            s=200,
+            c=plt.get_cmap("gist_rainbow")((i // 2) / (len(plotclasses) // 2)),
             marker=maker,
             label=target,
-            alpha=0.5,
+            alpha=alpha,
         )
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1, 0), loc="lower left", borderaxespad=0)
     plt.axis("off")
-    plt.savefig("result/embeddings_dann.png")
+    plt.savefig("result/embeddings_dann.png", bbox_inches="tight")
     print("Finish plotting!")
 
 

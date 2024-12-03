@@ -72,4 +72,4 @@ class DANN(nn.Module):
         x = self.encoder(x)
         y = self.classifier(x)
         d = self.domain_classifier(GradientReversalLayer.apply(x, 1.0))
-        return x, y, d
+        return y, d

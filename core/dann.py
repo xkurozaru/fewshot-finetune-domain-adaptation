@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from common import ImageTransform, param
@@ -16,7 +17,7 @@ def dann():
         tgt_root=param.test_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(
+    dataloader = DataLoader(
         dataset,
         batch_size=param.pretrain_batch_size,
         shuffle=True,
@@ -43,18 +44,16 @@ def dann():
         for (src_images, src_labels), (tgt_images, _) in tqdm(dataloader):
             src_images, src_labels = src_images.to(device, non_blocking=True), src_labels.to(device, non_blocking=True)
             tgt_images = tgt_images.to(device, non_blocking=True)
-
             domains = torch.cat([torch.zeros(src_images.size(0), 1), torch.ones(tgt_images.size(0), 1)], dim=0).to(device, non_blocking=True)
 
             # forward
             optimizer.zero_grad()
             with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
-                _, preds, src_domains_preds = model(src_images)
-                _, _, tgt_domains_preds = model(tgt_images)
+                preds, src_domains_preds = model(src_images)
+                _, tgt_domains_preds = model(tgt_images)
 
                 classify_loss = classify_criterion(preds, src_labels)
                 domains_preds = torch.cat([src_domains_preds, tgt_domains_preds], dim=0)
-
                 domain_loss = domain_criterion(domains_preds, domains)
                 loss = classify_loss + domain_loss
 

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from common import Dataset, ImageTransform, param
@@ -14,11 +15,11 @@ def pretrain():
         root=param.src_path,
         transform=ImageTransform(),
     )
-    dataloader = torch.utils.data.DataLoader(
+    dataloader = DataLoader(
         dataset,
         batch_size=param.pretrain_batch_size,
         shuffle=True,
-        num_workers=8,
+        num_workers=param.num_workers,
         pin_memory=True,
     )
 
