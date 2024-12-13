@@ -23,6 +23,7 @@ def triplet_tune():
         shuffle=True,
         num_workers=param.num_workers,
         pin_memory=True,
+        persistent_workers=True,
     )
 
     # model
@@ -51,24 +52,23 @@ def triplet_tune():
     for epoch in range(param.finetune_num_epochs):
         epoch_classify_loss = 0.0
         epoch_dist_loss = 0.0
-        for (tgt_images, tgt_labels), (p_images, p_labels), (n_images, n_labels) in tqdm(dataloader):
+        for (tgt_images, tgt_labels), (p_images, _), (n_images, _) in tqdm(dataloader):
+            tgt_size, p_size, n_size = tgt_images.size(0), p_images.size(0), n_images.size(0)
+
             tgt_images, tgt_labels = tgt_images.to(device, non_blocking=True), tgt_labels.to(device, non_blocking=True)
-            p_images, p_labels = p_images.to(device, non_blocking=True), p_labels.to(device, non_blocking=True)
-            n_images, n_labels = n_images.to(device, non_blocking=True), n_labels.to(device, non_blocking=True)
+            p_images = p_images.to(device, non_blocking=True)
+            n_images = n_images.to(device, non_blocking=True)
+            images = torch.cat([tgt_images, p_images, n_images], dim=0)
 
             # forward
             optimizer.zero_grad()
             with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
-                p_feature = encoder(p_images)
-                n_feature = encoder(n_images)
-                tgt_feature = encoder(tgt_images)
+                features = encoder(images)
+                tgt_features, p_features, n_features = torch.split(features, [tgt_size, p_size, n_size], dim=0)
+                tgt_outputs = classifier(tgt_features)
 
-                # p_outputs = classifier(p_feature)
-                tgt_outputs = classifier(tgt_feature)
-
-                # classify_loss = classify_criterion(p_outputs, p_labels)
                 classify_loss = classify_criterion(tgt_outputs, tgt_labels)
-                dist_loss = dist_criterion(tgt_feature, p_feature, n_feature)
+                dist_loss = dist_criterion(tgt_features, p_features, n_features)
                 loss = classify_loss + dist_loss
 
             # backward

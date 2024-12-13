@@ -44,7 +44,7 @@ def main():
                 inputs = inputs.to(device, non_blocking=True)
                 labels = labels.to(device, non_blocking=True)
 
-                _, outputs, _ = model(inputs)
+                outputs, _ = model(inputs)
                 _, preds = torch.max(outputs, 1)
 
                 predict_labels.extend(preds.tolist())

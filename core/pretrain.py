@@ -21,6 +21,7 @@ def pretrain():
         shuffle=True,
         num_workers=param.num_workers,
         pin_memory=True,
+        persistent_workers=True,
     )
 
     # model

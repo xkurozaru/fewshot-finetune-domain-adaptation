@@ -23,6 +23,7 @@ def dann():
         shuffle=True,
         num_workers=param.num_workers,
         pin_memory=True,
+        persistent_workers=True,
     )
 
     # model
@@ -42,20 +43,29 @@ def dann():
         epoch_classify_loss = 0.0
         epoch_domain_loss = 0.0
         for (src_images, src_labels), (tgt_images, _) in tqdm(dataloader):
+            src_size, tgt_size = src_images.size(0), tgt_images.size(0)
+
             src_images, src_labels = src_images.to(device, non_blocking=True), src_labels.to(device, non_blocking=True)
             tgt_images = tgt_images.to(device, non_blocking=True)
-            domains = torch.cat([torch.zeros(src_images.size(0), 1), torch.ones(tgt_images.size(0), 1)], dim=0).to(device, non_blocking=True)
+            images = torch.cat([src_images, tgt_images], dim=0)
+
+            domains = torch.empty((src_size + tgt_size, 1), device=device, dtype=torch.float32)
+            domains[:src_size] = 0
+            domains[src_size:] = 1
 
             # forward
             optimizer.zero_grad()
             with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
-                preds, src_domains_preds = model(src_images)
-                _, tgt_domains_preds = model(tgt_images)
+                preds, domain_preds = model(images)
+                src_preds, _ = torch.split(preds, [src_size, tgt_size], dim=0)
 
-                classify_loss = classify_criterion(preds, src_labels)
-                domains_preds = torch.cat([src_domains_preds, tgt_domains_preds], dim=0)
-                domain_loss = domain_criterion(domains_preds, domains)
+                classify_loss = classify_criterion(src_preds, src_labels)
+                domain_loss = domain_criterion(domain_preds, domains)
                 loss = classify_loss + domain_loss
+
+            if not torch.isfinite(loss):
+                print(f"Non-finite loss detected at epoch {epoch}, skipping step")
+                continue
 
             # backward
             scaler.scale(loss).backward()

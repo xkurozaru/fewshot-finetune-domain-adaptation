@@ -23,6 +23,7 @@ def dist_tune():
         shuffle=True,
         num_workers=param.num_workers,
         pin_memory=True,
+        persistent_workers=True,
     )
 
     # model
@@ -51,22 +52,22 @@ def dist_tune():
     for epoch in range(param.finetune_num_epochs):
         epoch_classify_loss = 0.0
         epoch_dist_loss = 0.0
-        for (tgt_images, tgt_labels), (src_images, src_labels) in tqdm(dataloader):
+        for (tgt_images, tgt_labels), (src_images, _) in tqdm(dataloader):
+            tgt_size, src_size = tgt_images.size(0), src_images.size(0)
+
             tgt_images, tgt_labels = tgt_images.to(device, non_blocking=True), tgt_labels.to(device, non_blocking=True)
-            src_images, src_labels = src_images.to(device, non_blocking=True), src_labels.to(device, non_blocking=True)
+            src_images = src_images.to(device, non_blocking=True)
+            images = torch.cat([tgt_images, src_images], dim=0)
 
             # forward
             optimizer.zero_grad()
             with torch.autocast(device_type=device.type, dtype=torch.bfloat16):
-                src_feature = encoder(src_images)
-                tgt_feature = encoder(tgt_images)
+                features = encoder(images)
+                tgt_features, src_features = torch.split(features, [tgt_size, src_size], dim=0)
+                tgt_outputs = classifier(tgt_features)
 
-                # src_outputs = classifier(src_feature)
-                tgt_outputs = classifier(tgt_feature)
-
-                # classify_loss = classify_criterion(src_outputs, src_labels)
                 classify_loss = classify_criterion(tgt_outputs, tgt_labels)
-                dist_loss = dist_criterion(tgt_feature, src_feature)
+                dist_loss = dist_criterion(tgt_features, src_features)
                 loss = classify_loss + dist_loss
 
             # backward
